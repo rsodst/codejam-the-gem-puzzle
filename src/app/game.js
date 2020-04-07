@@ -77,8 +77,16 @@ class Game {
   createGame(size)
   {
     if (this.view) {
-      document.body.removeChild(this.view);
+
+      Array.from(document.body.childNodes).forEach((p) => {
+        if (p.nodeName == 'DIV') {
+          document.body.removeChild(p);
+        }
+      });
     }
+    
+    this.cells = [];
+    this.field = [];
 
     size = size || this.size;
 
@@ -161,6 +169,7 @@ class Game {
       clickedCell.element.style.left = `${tmpLeft}px`;
       clickedCell.element.style.top = `${tmpTop}px`;
     }
+
     this.updateCells();
 
     this.checkIsWin();
