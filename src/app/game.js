@@ -1,47 +1,233 @@
 import DragManager from './dragManager';
 
 class Game {
-  constructor(size) {
+  constructor() {
+
+    this.createGameField(3);
+    this.createGameView();
+
+    this.stepCount = 0;
+
     DragManager.onDragCancel = function (dragObject) {
       dragObject.avatar.rollback();
     };
 
-    DragManager.onDragEnd = function (dragObject, dropElem) {
+    DragManager.onDragEnd = (dragObject, dropElem) => {
       dragObject.elem.style.left = dropElem.style.left;
       dragObject.elem.style.top = dropElem.style.top;
 
-      console.log('dragend');
+      let number = dragObject.elem.innerText;
+      this.beginStepForCell(Number(number), true, dragObject.oldLeft, dragObject.oldTop);
     };
   }
 
-  create4x4GameField() {
+  // view
+
+  createGameView() {
+
     this.view = document.createElement('div');
-    this.view.classList.add('game');
-    this.view.classList.add('game--size-4x4');
+    this.view.classList.add('container');
 
-    let counter = 1;
-    for (let i = 0; i < 4; ++i) {
-      for (let j = 0; j < 4; ++j) {
-        const element = document.createElement('div');
-        element.classList.add('cell');
+    this.game = document.createElement('div');
+    this.game.classList.add('game');
+    this.game.classList.add(`game--size-${this.size}x${this.size}`);
 
-        element.style.left = `${100 * j + 8}px`;
-        element.style.top = `${100 * i + 8}px`;
+    this.cells = [];
 
-        if (i === 0 && j === 2) {
-          element.classList.add('cell--empty');
-          this.view.appendChild(element);
-          element.classList.add('droppable');
-          continue;
-        } else {
-          element.innerText = counter++;
-          element.classList.add('draggable');
-        }
+    this.field.forEach((row, i) => {
+      row.forEach((element, j) => {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
 
-        this.view.appendChild(element);
-      }
-    }
+        cell.style.left = `${100 * j}px`;
+        cell.style.top = `${100 * i}px`;
+
+        cell.innerText = element;
+
+        this.cells.push({
+          number: Number(element),
+          element: cell
+        });
+
+        this.game.appendChild(cell);
+      });
+    });
+
+    this.updateCells();
+
+    var controls = document.createElement('control');
+    controls.innerHTML = " <div class=\"control game--size-3x3\">\r\n        <div>\r\n            <button onclick=\"game.createGame();\">\u0420\u0430\u0437\u043C\u0435\u0448\u0430\u0442\u044C \u0438 \u043D\u0430\u0447\u0430\u0442\u044C<\/button>\r\n            <button onclick=\"game.stop()\">\u0421\u0442\u043E\u043F<\/button>\r\n            <button onclick=\"game.save()\">\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C<\/button>\r\n        <\/div>\r\n        <div>\r\n            <span id=\"stepCount\">\u0425\u043E\u0434\u043E\u0432: 0<\/span>\r\n            <span>\u0412\u0440\u0435\u043C\u044F: 10:56<\/span>\r\n        <\/div>\r\n        <p>\u0420\u0430\u0437\u0440\u0435\u043C \u043F\u043E\u043B\u044F: 4x4<\/p>\r\n        <div>\u0414\u0440\u0443\u0433\u0438\u0435 \u0440\u0430\u0437\u043C\u0435\u0440\u044B:\r\n            <a href=\"#\" onclick=\"game.createGame(3);\">3x3<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(4);\">4x4<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(5);\">5x5<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(6);\">6x6<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(7);\">7x7<\/a>\r\n        <\/div>\r\n        <button>\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B<\/button>\r\n    <\/div>";
+
+    this.view.appendChild(this.game);
+    this.view.appendChild(controls);
 
     document.body.appendChild(this.view);
   }
+
+  stop()
+  {
+
+  }
+
+  save()
+  {
+    
+  }
+
+  createGame(size)
+  {
+    if (this.view) {
+      document.body.removeChild(this.view);
+    }
+
+    size = size || this.size;
+
+    this.stepCount = 0;
+    this.createGameField(size);
+    this.createGameView();
+  }
+
+  setAsHoleElement(element, enabled = true) {
+    if (enabled) {
+      element.classList.add('cell--empty');
+      element.classList.add('droppable');
+    } else {
+      element.classList.remove('cell--empty');
+      element.classList.remove('droppable');
+    }
+  }
+
+  setAsDraggableElement(element, enabled = true) {
+    if (enabled) {
+      element.classList.add('cell--hovered');
+      element.classList.add('draggable');
+    } else {
+      element.classList.remove('cell--hovered');
+      element.classList.remove('draggable');
+    }
+  }
+
+  updateCells() {
+    let hole = this.cells.find(p => p.number == this.size * this.size);
+
+    this.setAsHoleElement(hole.element);
+
+    this.cells.forEach(p => {
+      p.element.classList.remove('cell--hovered');
+      p.element.classList.remove('draggable');
+      p.element.onclick = null;
+    });
+
+    this.getDraggableNumber().forEach(number => {
+      let cell = this.cells.find(cell => cell.number == number);
+      this.setAsDraggableElement(cell.element);
+      cell.element.onclick = () => {
+        this.beginStepForCell(cell.number);
+      }
+    });
+  }
+
+  beginStepForCell(number, fromJesture, holeLeft, holeTop) {
+
+    this.stepCount++;
+
+    let stepCount = document.getElementById('stepCount');
+    stepCount.innerText = `Ходов: ${this.stepCount}`;
+
+    let hole = this.cells.find(p => p.number == this.size * this.size);
+    let clickedCell = this.cells.find(p => p.number == number);
+
+    if (fromJesture) {
+      clickedCell.element.onclick = null;
+    }
+
+    let holeIndex = this.findIndex(this.size * this.size);
+    let currentIndex = this.findIndex(number);
+    // swap in array
+    console.log(this.field.join(','));
+    this.swap(holeIndex, currentIndex);
+    console.log(this.field.join(','));
+
+    if (fromJesture) {
+      hole.element.style.left = `${holeLeft}px`;
+      hole.element.style.top = `${holeTop}px`;
+    } else {
+      let tmpLeft = parseInt(hole.element.style.left);
+      let tmpTop = parseInt(hole.element.style.top);
+
+      hole.element.style.left = clickedCell.element.style.left;
+      hole.element.style.top = clickedCell.element.style.top;
+
+      clickedCell.element.style.left = `${tmpLeft}px`;
+      clickedCell.element.style.top = `${tmpTop}px`;
+    }
+    this.updateCells();
+
+    this.checkIsWin();
+  }
+
+  // logic
+
+  checkIsWin() {
+    if (this.field.join(',') == this.field.flat().sort().join(',')) {
+      alert('Win');
+    }
+  }
+
+  swap(from, to) {
+    let [i, j] = from;
+    let [k, x] = to;
+
+    let tmp = this.field[i][j];
+
+    this.field[i][j] = this.field[k][x];
+    this.field[k][x] = tmp;
+  }
+
+  getDraggableNumber() {
+    let [i, j] = this.findIndex(this.size * this.size);
+    return [
+      this.field[i - 1] ? this.field[i - 1][j] : undefined,
+      this.field[i + 1] ? this.field[i + 1][j] : undefined,
+      this.field[i] ? this.field[i][j - 1] : undefined,
+      this.field[i] ? this.field[i][j + 1] : undefined,
+    ].filter(p => p);
+  }
+
+  findIndex(number) {
+    for (let i = 0; i < this.size; ++i) {
+      for (let j = 0; j < this.size; ++j) {
+        if (this.field[i][j] === number) {
+          return [i, j];
+        }
+      }
+    }
+  }
+
+  createGameField(size) {
+
+    this.size = size;
+
+    let availableCellNumbers = [];
+    for (let i = 0; i < size * size; ++i) {
+      availableCellNumbers.push(i + 1);
+    }
+
+    availableCellNumbers.sort(function () {
+      return Math.random() - 0.5;
+    });
+
+    this.field = [];
+    let k = 0;
+
+    for (let i = 0; i < size; ++i) {
+      this.field[i] = [];
+
+      for (let j = 0; j < size; ++j) {
+        this.field[i][j] = availableCellNumbers[k++];
+      }
+    }
+  }
 }
+
+export default Game;

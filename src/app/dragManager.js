@@ -24,6 +24,10 @@ const DragManager = new function () {
     dragObject.downX = e.pageX;
     dragObject.downY = e.pageY;
 
+    //запомним позицию элемента
+    dragObject.oldLeft = parseInt(elem.style.left);
+    dragObject.oldTop = parseInt(elem.style.top);
+
     return false;
   }
 
