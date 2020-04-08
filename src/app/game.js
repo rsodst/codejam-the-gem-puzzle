@@ -1,12 +1,12 @@
 import DragManager from './dragManager';
+import StopWatch from './stopWtach';
 
 class Game {
   constructor() {
 
-    this.createGameField(3);
-    this.createGameView();
+    this.createGame(3);
 
-    this.stepCount = 0;
+
 
     DragManager.onDragCancel = function (dragObject) {
       dragObject.avatar.rollback();
@@ -56,7 +56,7 @@ class Game {
     this.updateCells();
 
     var controls = document.createElement('control');
-    controls.innerHTML = " <div class=\"control game--size-3x3\">\r\n        <div>\r\n            <button onclick=\"game.createGame();\">\u0420\u0430\u0437\u043C\u0435\u0448\u0430\u0442\u044C \u0438 \u043D\u0430\u0447\u0430\u0442\u044C<\/button>\r\n            <button onclick=\"game.stop()\">\u0421\u0442\u043E\u043F<\/button>\r\n            <button onclick=\"game.save()\">\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C<\/button>\r\n        <\/div>\r\n        <div>\r\n            <span id=\"stepCount\">\u0425\u043E\u0434\u043E\u0432: 0<\/span>\r\n            <span>\u0412\u0440\u0435\u043C\u044F: 10:56<\/span>\r\n        <\/div>\r\n        <p>\u0420\u0430\u0437\u0440\u0435\u043C \u043F\u043E\u043B\u044F: 4x4<\/p>\r\n        <div>\u0414\u0440\u0443\u0433\u0438\u0435 \u0440\u0430\u0437\u043C\u0435\u0440\u044B:\r\n            <a href=\"#\" onclick=\"game.createGame(3);\">3x3<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(4);\">4x4<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(5);\">5x5<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(6);\">6x6<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(7);\">7x7<\/a>\r\n        <\/div>\r\n        <button>\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B<\/button>\r\n    <\/div>";
+    controls.innerHTML = " <div class=\"control game-bar\">\r\n        <div>\r\n            <button onclick=\"game.createGame();\">\u0420\u0430\u0437\u043C\u0435\u0448\u0430\u0442\u044C \u0438 \u043D\u0430\u0447\u0430\u0442\u044C<\/button>\r\n            <button  id=\"stopBtn\" onclick=\"game.stop()\">\u0421\u0442\u043E\u043F<\/button>\r\n            <button onclick=\"game.save()\">\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C<\/button>\r\n        <\/div>\r\n        <div>\r\n            <span id=\"stepCount\">\u0425\u043E\u0434\u043E\u0432: 0<\/span>\r\n            <span id=\"stopWatch\">\u0412\u0440\u0435\u043C\u044F: 10:56<\/span>\r\n        <\/div>\r\n        <p>\u0420\u0430\u0437\u0440\u0435\u043C \u043F\u043E\u043B\u044F: 4x4<\/p>\r\n        <div>\u0414\u0440\u0443\u0433\u0438\u0435 \u0440\u0430\u0437\u043C\u0435\u0440\u044B:\r\n            <a href=\"#\" onclick=\"game.createGame(3);\">3x3<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(4);\">4x4<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(5);\">5x5<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(6);\">6x6<\/a>\r\n            <a href=\"#\" onclick=\"game.createGame(7);\">7x7<\/a>\r\n        <\/div>\r\n        <button>\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B<\/button>\r\n    <\/div>";
 
     this.view.appendChild(this.game);
     this.view.appendChild(controls);
@@ -64,27 +64,36 @@ class Game {
     document.body.appendChild(this.view);
   }
 
-  stop()
-  {
-
+  stop() {
+    if (!this.isStopped) {
+      document.getElementById('stopBtn').innerText = 'Play'
+      this.stopWatch.stop();
+      this.isStopped = true;
+      this.game.classList.add('disabled');
+    } else {
+      document.getElementById('stopBtn').innerText = 'Stop'
+      this.game.classList.remove('disabled');
+      this.stopWatch.start();
+      this.isStopped = false;
+    }
   }
 
-  save()
-  {
-    
+  save() {
+    localStorage.setItem('field', this.field);
   }
 
-  createGame(size)
-  {
+  createGame(size) {
+
+    this.isStopped = false;
+
     if (this.view) {
-
       Array.from(document.body.childNodes).forEach((p) => {
         if (p.nodeName == 'DIV') {
           document.body.removeChild(p);
         }
       });
     }
-    
+
     this.cells = [];
     this.field = [];
 
@@ -93,6 +102,12 @@ class Game {
     this.stepCount = 0;
     this.createGameField(size);
     this.createGameView();
+
+    let stopWatchDisplay = document.getElementById('stopWatch');
+    this.stopWatch = new StopWatch(stopWatchDisplay);
+    this.stopWatch.start();
+
+
   }
 
   setAsHoleElement(element, enabled = true) {
@@ -140,7 +155,7 @@ class Game {
     this.stepCount++;
 
     let stepCount = document.getElementById('stepCount');
-    stepCount.innerText = `Ходов: ${this.stepCount}`;
+    stepCount.innerText = `Ходов: ${this.stepCount}, `;
 
     let hole = this.cells.find(p => p.number == this.size * this.size);
     let clickedCell = this.cells.find(p => p.number == number);
@@ -152,13 +167,12 @@ class Game {
     let holeIndex = this.findIndex(this.size * this.size);
     let currentIndex = this.findIndex(number);
     // swap in array
-    console.log(this.field.join(','));
     this.swap(holeIndex, currentIndex);
-    console.log(this.field.join(','));
 
     if (fromJesture) {
       hole.element.style.left = `${holeLeft}px`;
       hole.element.style.top = `${holeTop}px`;
+
     } else {
       let tmpLeft = parseInt(hole.element.style.left);
       let tmpTop = parseInt(hole.element.style.top);
@@ -179,7 +193,8 @@ class Game {
 
   checkIsWin() {
     if (this.field.join(',') == this.field.flat().sort().join(',')) {
-      alert('Win');
+      alert(`Вы выиграли за ${document.getElementById('stopWatch').innerText} и ${this.stepCount} ходов`);
+      this.createGame();
     }
   }
 
