@@ -295,8 +295,6 @@ class Game {
 
   createGameField(size, fieldValues) {
 
-    console.log(fieldValues);
-
     this.size = size;
 
     let availableCellNumbers = [];
@@ -311,6 +309,8 @@ class Game {
       });
     } else {
       availableCellNumbers = Array.from(fieldValues.split(',').map(p => parseInt(p)));
+      this.size = Math.sqrt(availableCellNumbers.length);
+      size = this.size;
       console.log(availableCellNumbers);
     }
 
