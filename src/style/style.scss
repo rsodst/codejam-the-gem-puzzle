@@ -72,7 +72,7 @@ body {
         content: "";
         width: 600px;
         height: 600px;
-    
+
         position: absolute;
         z-index: 9999;
         background-color: gray;
@@ -151,6 +151,11 @@ body {
     user-select: none;
     cursor: pointer;
     transition: box-shadow 0.3s ease;
+
+    &.cell--translate-animation {
+        transition: all 0.2s linear;
+        transition: all 0.2s linear;
+    }
 
     &.cell--empty {
         box-shadow: 0 0 0px black;

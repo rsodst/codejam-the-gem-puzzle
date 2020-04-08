@@ -169,6 +169,10 @@ class Game {
       let cell = this.cells.find(cell => cell.number == number);
       this.setAsDraggableElement(cell.element);
       cell.element.onclick = () => {
+        cell.element.classList.add('cell--translate-animation');
+        cell.element.onmouseleave = ()=>{
+          cell.element.classList.remove('cell--translate-animation');
+        }
         this.beginStepForCell(cell.number);
       }
     });
